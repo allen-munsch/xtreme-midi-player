@@ -1,4 +1,3 @@
-import { DraggableWindow } from "./DraggabledWindow";
 import { RetroMusicPlayer } from "./MusicPlayer";
 
 export default function Home() {
