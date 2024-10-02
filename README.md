@@ -37,3 +37,4 @@ Inspired by:
 
 - https://github.com/surikov/webaudiofont/ 
 - https://jdan.github.io/98.css/#tree-view
+- https://github.com/fraigo/javascript-midi-player
