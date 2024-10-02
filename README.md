@@ -18,6 +18,8 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ![Example Screenshot](./public/2024-10-02_18-27.png)
 
+The window is draggable and midi files playable. Wow neat!
+
 ```tsx
 import { RetroMusicPlayer } from "./MusicPlayer";
 
@@ -29,3 +31,9 @@ export default function Home() {
   );
 }
 ```
+
+
+Inspired by:
+
+- https://github.com/surikov/webaudiofont/ 
+- https://jdan.github.io/98.css/#tree-view
