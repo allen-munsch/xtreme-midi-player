@@ -2,8 +2,16 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { midiSongs } from "./PlayList";
-import { MIDIPlayer as MIDIPlayerJS } from "./MidiPlayer";
+import { MIDIPlayer as DisrespectMIDIPlayerJS } from "./MidiPlayer";
+import { MIDIPlayer as RespectMIDIPlayerJS } from "./Respectful.MidiPlayer"
 import { DraggableWindow } from "./DraggabledWindow";
+
+let MIDIPlayerJS = RespectMIDIPlayerJS
+
+const RESPECT = true;
+if (!RESPECT) {
+	MIDIPlayerJS = DisrespectMIDIPlayerJS
+}
 
 export interface MIDISong {
 	tracks: MIDITrack[];

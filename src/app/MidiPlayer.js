@@ -4,145 +4,154 @@ import { createWebAudioFontPlayer, createWebAudioFontLoader } from "./WebAudioFo
 import { MIDIFile } from "./MidiFile";
 
 export const MIDIPlayer = (fileInput, onload, ontick) => {
-	let audioContext = null;
-	let player = null;
-	let reverberator = null;
-	let songStart = 0;
-	let input = null;
-	let currentSongTime = 0;
-	let nextStepTime = 0;
-	let nextPositionTime = 0;
-	let loadedsong = null;
-	let loader = null;
-	let stoppedsong = null;
-	const stepDuration = 44 / 1000;
-	let lastPosition = 0;
+    let audioContext = null;
+    let player = null;
+    let reverberator = null;
+    let songStart = 0;
+    let input = null;
+    let currentSongTime = 0;
+    let nextStepTime = 0;
+    let nextPositionTime = 0;
+    let loadedsong = null;
+    let loader = null;
+    let stoppedsong = null;
+    const stepDuration = 44 / 1000;
+    let lastPosition = 0;
 
-	let currentPosition = 0;
-	let duration = 0;
-	let state = "stopped";
+    let currentPosition = 0;
+    let duration = 0;
+    let state = "stopped";
 
-	const STOPPED = "stopped";
-	const PLAYING = "playing";
-	const PAUSED = "paused";
+    const STOPPED = "stopped";
+    const PLAYING = "playing";
+    const PAUSED = "paused";
 
-	const log = (msg, extra) => console.log(msg, extra);
+    const log = (msg, extra) => console.log(msg, extra);
 
-	const play = () => {
-		if (!loadedsong && stoppedsong) {
-			loadedsong = stoppedsong;
-		}
-		if (loadedsong) {
-			try {
-				startPlay(loadedsong);
-				if (state === PAUSED) {
-					setPosition(lastPosition);
-				}
-				state = PLAYING;
-			} catch (expt) {
-				log("error ", expt);
-			}
-		}
-	};
+    const play = () => {
+		state = PLAYING;
+        if (!loadedsong && stoppedsong) {
+            loadedsong = stoppedsong;
+        }
+        if (loadedsong) {
+            try {
+                startPlay(loadedsong);
+                if (state === PAUSED) {
+                    setPosition(lastPosition);
+                }
+            } catch (expt) {
+                log("error ", expt);
+            }
+        }
+    };
 
-	const pause = () => {
-		if (loadedsong) {
-			lastPosition = getPosition();
-			console.log("Position", lastPosition);
-			stop();
-			currentSongTime = lastPosition;
-			state = PAUSED;
-		}
-	};
+    const pause = () => {
+        if (loadedsong) {
+            lastPosition = getPosition();
+            console.log("Position", lastPosition);
+            stop();
+            currentSongTime = lastPosition;
+            state = PAUSED;
+        }
+    };
 
-	const stop = () => {
-		if (loadedsong) {
-			player.cancelQueue(audioContext);
-			songStart = 0;
-			currentSongTime = 0;
-			stoppedsong = loadedsong;
-			loadedsong = null;
-			state = STOPPED;
-		}
-	};
+    const stop = () => {
+        if (loadedsong) {
+            player.cancelQueue(audioContext);
+            songStart = 0;
+            currentSongTime = 0;
+            stoppedsong = loadedsong;
+            loadedsong = null;
+            state = STOPPED;
+        }
+    };
 
-	const getContext = () => player;
+    const getContext = () => player;
 
-	const startPlay = (song) => {
-		currentSongTime = 0;
-		songStart = audioContext.currentTime;
-		nextStepTime = audioContext.currentTime;
+    const startPlay = (song) => {
+        currentSongTime = 0;
+        songStart = audioContext.currentTime;
+        nextStepTime = audioContext.currentTime;
 
-		tick(song, stepDuration);
-	};
+        scheduler();
+    };
 
-	const tick = (song, stepDuration) => {
-		if (audioContext.currentTime > nextStepTime - stepDuration) {
-			sendNotes(
-				song,
-				songStart,
-				currentSongTime,
-				currentSongTime + stepDuration,
-				audioContext,
-				input,
-				player,
-			);
-			currentSongTime = currentSongTime + stepDuration;
-			nextStepTime = nextStepTime + stepDuration;
-			if (currentSongTime > song.duration) {
-				currentSongTime = currentSongTime - song.duration;
-				sendNotes(song, songStart, 0, currentSongTime, audioContext, input, player);
-				songStart = songStart + song.duration;
-			}
-		}
-		if (nextPositionTime < audioContext.currentTime) {
-			currentPosition = currentSongTime;
-			duration = song.duration;
-			nextPositionTime = audioContext.currentTime + 3;
-		}
-		if (typeof ontick === "function") {
-			ontick(loadedsong, currentSongTime);
-		}
-		requestAnimationFrame(() => {
-			if (loadedsong) {
-				tick(loadedsong, stepDuration);
-			}
-		});
-	};
+    const scheduler = () => {
+		console.log(JSON.stringify({
+			nextPositionTime,
+			songStart,
+			'audioContext.currentTime': audioContext.currentTime,
+			loadedsong,
+			state,
+		}))
+        if (audioContext.currentTime > nextStepTime - stepDuration) {
+            sendNotes(
+                loadedsong,
+                songStart,
+                currentSongTime,
+                currentSongTime + stepDuration,
+                audioContext,
+                input,
+                player
+            );
+            currentSongTime += stepDuration;
+            nextStepTime += stepDuration;
 
-	const sendNotes = (song, songStart, start, end, audioContext, input, player) => {
-		for (const track of song.tracks) {
-			for (const note of track.notes) {
-				if (note.when >= start && note.when < end) {
-					const when = songStart + note.when;
-					const duration = Math.min(note.duration, 3);
-					const instr = track.info.variable;
-					const v = track.volume / 7;
-					player.queueWaveTable(
-						audioContext,
-						input,
-						window[instr],
-						when,
-						note.pitch,
-						duration,
-						v,
-						note.slides,
-					);
-				}
-			}
-		}
-		for (const beat of song.beats) {
-			for (const note of beat.notes) {
-				if (note.when >= start && note.when < end) {
-					const when = songStart + note.when;
-					const duration = 1.5;
-					const instr = beat.info.variable;
-					const v = beat.volume / 2;
-					player.queueWaveTable(audioContext, input, window[instr], when, beat.n, duration, v);
-				}
-			}
-		}
-	};
+            if (currentSongTime > loadedsong.duration) {
+                currentSongTime -= loadedsong.duration;
+                sendNotes(loadedsong, songStart, 0, currentSongTime, audioContext, input, player);
+                songStart += loadedsong.duration;
+            }
+        }
+
+        if (nextPositionTime < audioContext.currentTime) {
+            currentPosition = currentSongTime;
+            duration = loadedsong.duration;
+            nextPositionTime = audioContext.currentTime + 3;
+        }
+
+        if (typeof ontick === "function") {
+            ontick(loadedsong, currentSongTime);
+        }
+
+        if (loadedsong && state === PLAYING) {
+            setTimeout(scheduler, 20);
+        }
+    };
+
+    const sendNotes = (song, songStart, start, end, audioContext, input, player) => {
+        for (const track of song.tracks) {
+            for (const note of track.notes) {
+                if (note.when >= start && note.when < end) {
+                    const when = songStart + note.when;
+                    const duration = Math.min(note.duration, 3);
+                    const instr = track.info.variable;
+                    const v = track.volume / 7;
+                    player.queueWaveTable(
+                        audioContext,
+                        input,
+                        window[instr],
+                        when,
+                        note.pitch,
+                        duration,
+                        v,
+                        note.slides,
+                    );
+                }
+            }
+        }
+        for (const beat of song.beats) {
+            for (const note of beat.notes) {
+                if (note.when >= start && note.when < end) {
+                    const when = songStart + note.when;
+                    const duration = 1.5;
+                    const instr = beat.info.variable;
+                    const v = beat.volume / 2;
+                    player.queueWaveTable(audioContext, input, window[instr], when, beat.n, duration, v);
+                }
+            }
+        }
+    };
 
 	const startLoad = (song) => {
 		console.log(song);
