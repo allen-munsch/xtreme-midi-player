@@ -77,13 +77,6 @@ export const MIDIPlayer = (fileInput, onload, ontick) => {
     };
 
     const scheduler = () => {
-		console.log(JSON.stringify({
-			nextPositionTime,
-			songStart,
-			'audioContext.currentTime': audioContext.currentTime,
-			loadedsong,
-			state,
-		}))
         if (audioContext.currentTime > nextStepTime - stepDuration) {
             sendNotes(
                 loadedsong,
